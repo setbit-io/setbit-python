@@ -148,7 +148,7 @@ else:
 
 ---
 
-### `track(event_name, user_id, flag_name=None, metadata=None)`
+### `track(event_name, user_id, flag_name=None, variant=None, metadata=None)`
 
 Track a conversion event.
 
@@ -156,6 +156,7 @@ Track a conversion event.
 - `event_name` (str): Name of the event (e.g., `"purchase"`, `"signup"`)
 - `user_id` (str, **required**): User identifier (required for analytics and billing)
 - `flag_name` (str, optional): Flag to associate with this conversion
+- `variant` (str, optional): Variant the user was assigned to (for A/B test attribution)
 - `metadata` (dict, optional): Additional event data
 
 **Returns:** `None`
@@ -166,23 +167,22 @@ Track a conversion event.
 ```python
 user_id = get_current_user_id()
 
-# Track basic conversion
-client.track("signup", user_id=user_id)
-
-# Track with flag association
-client.track("purchase", user_id=user_id, flag_name="checkout-experiment")
-
-# Track with metadata
+# Track conversion with variant attribution (recommended for A/B tests)
+variant = client.variant("pricing-test", user_id=user_id)
+# ... later when user converts ...
 client.track(
     "purchase",
     user_id=user_id,
     flag_name="pricing-test",
-    metadata={
-        "amount": 99.99,
-        "currency": "USD",
-        "product_id": "prod_123"
-    }
+    variant=variant,
+    metadata={"amount": 99.99, "currency": "USD"}
 )
+
+# Track basic conversion
+client.track("signup", user_id=user_id)
+
+# Track with flag association only
+client.track("purchase", user_id=user_id, flag_name="checkout-experiment")
 ```
 
 ---
@@ -267,8 +267,8 @@ else:
     # Control: Original hero
     render_hero(size="medium", style="image")
 
-# Track conversion for this experiment
-client.track("signup", user_id=current_user.id, flag_name="homepage-hero")
+# Track conversion for this experiment (pass variant for proper attribution)
+client.track("signup", user_id=current_user.id, flag_name="homepage-hero", variant=variant)
 ```
 
 ### Conversion Tracking
@@ -375,6 +375,7 @@ def purchase_complete(request):
         "purchase",
         user_id=user_id,
         flag_name="checkout-flow",
+        variant=request.POST.get("variant"),  # Pass variant from frontend
         metadata={"amount": request.POST["amount"]}
     )
     return redirect("thank_you")
