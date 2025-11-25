@@ -143,6 +143,7 @@ class SetBit:
         event_name: str,
         user_id: str,
         flag_name: Optional[str] = None,
+        variant: Optional[str] = None,
         metadata: Optional[Dict[str, Any]] = None
     ) -> None:
         """
@@ -152,10 +153,16 @@ class SetBit:
             event_name: Name of the event (e.g., "purchase", "signup")
             user_id: User identifier (required)
             flag_name: Optional flag name to associate with event
+            variant: Optional variant the user was assigned to (for A/B test attribution)
             metadata: Optional metadata dictionary
 
         Note:
             Fails silently if tracking request fails (logs error but doesn't raise)
+
+        Example:
+            >>> variant = client.variant("pricing-test", user_id)
+            >>> # ... later when user converts ...
+            >>> client.track("purchase", user_id, flag_name="pricing-test", variant=variant)
         """
         try:
             url = f"{self.base_url}/v1/track"
@@ -168,6 +175,9 @@ class SetBit:
 
             if flag_name:
                 payload["flagName"] = flag_name
+
+            if variant:
+                payload["variant"] = variant
 
             if metadata:
                 payload["metadata"] = metadata
